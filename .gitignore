@@ -1,0 +1,44 @@
+*.swp
+*~
+*.ghc.environment.*
+
+# nix-build
+result
+
+# docker build
+/docker-image.tar.gz
+
+# Created by https://www.gitignore.io/api/haskell
+
+### Haskell ###
+dist
+dist-*
+cabal-dev
+*.o
+*.hi
+*.chi
+*.chs.h
+*.dyn_o
+*.dyn_hi
+.hpc
+.hsenv
+.cabal-sandbox/
+cabal.sandbox.config
+*.prof
+*.aux
+*.hp
+*.eventlog
+.stack-work/
+cabal.project.local
+.HTF/
+
+# End of https://www.gitignore.io/api/haskell
+
+# Created by https://www.gitignore.io/api/idris
+# Edit at https://www.gitignore.io/?templates=idris
+
+### Idris ###
+*.ibc
+*.o
+
+# End of https://www.gitignore.io/api/idris

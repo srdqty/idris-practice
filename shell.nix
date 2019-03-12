@@ -4,6 +4,7 @@ let
   idris = pkgs.idrisPackages.with-packages (with pkgs.idrisPackages; [
     prelude
     base
+    contrib
   ]);
 in
   pkgs.stdenv.mkDerivation {

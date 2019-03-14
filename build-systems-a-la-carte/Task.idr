@@ -28,30 +28,27 @@ getHash k (MkStore _ f) = hash (f k)
 Constraint : Type
 Constraint = (Type -> Type) -> Type
 
-TypeCons : Type
-TypeCons = Type -> Type
+data Task : Constraint -> Type -> Type -> Type where
+  MkTask : ({f : _} -> c f => (c f => k -> f v) -> f v) -> Task c k v
 
-data Task : Constraint -> TypeCons -> Type -> Type -> Type where
-  MkTask : {f : _} -> (c f => (k -> f v) -> f v) -> Task c f k v
+Tasks : Constraint -> Type -> Type -> Type
+Tasks c k v = k -> Maybe (Task c k v)
 
-Tasks : Constraint -> TypeCons -> Type -> Type -> Type
-Tasks c f k v = k -> Maybe (Task c f k v)
+Build : Constraint -> Type -> Type -> Type -> Type
+Build c i k v = Tasks c k v -> k -> Store i k v -> Store i k v
 
-Build : Constraint -> TypeCons -> Type -> Type -> Type -> Type
-Build c f i k v = Tasks c f k v -> k -> Store i k v -> Store i k v
+Rebuilder : Constraint -> Type -> Type -> Type -> Type
+Rebuilder c ir k v = k -> v -> Task c k v -> Task (MonadState ir) k v
 
-Rebuilder : Constraint -> TypeCons -> Type -> Type -> Type -> Type
-Rebuilder c f ir k v = k -> v -> Task c f k v -> Task (MonadState ir) f k v
+Scheduler : Constraint -> Type -> Type -> Type -> Type -> Type
+Scheduler c i ir k v = Rebuilder c ir k v -> Build c i k v
 
-Scheduler : Constraint -> TypeCons -> Type -> Type -> Type -> Type -> Type
-Scheduler c f i ir k v = Rebuilder c f ir k v -> Build c f i k v
-
-sprsh1 : Applicative f => Tasks Applicative f String Integer
-sprsh1 {f} "B1" = Just (MkTask {f=f} (\fetch => liftA2 (+) (fetch "A1") (fetch "A2")))
-sprsh1 {f} "B2" = Just (MkTask {f=f} (\fetch => liftA (*2) (fetch "B1")))
+sprsh1 : Tasks Applicative String Integer
+sprsh1 "B1" = Just (MkTask (\fetch => liftA2 (+) (fetch "A1") (fetch "A2")))
+sprsh1 "B2" = Just (MkTask (\fetch => liftA (*2) (fetch "B1")))
 sprsh1 _ = Nothing
 
-busy : Eq k => Build Applicative (State (Store () k v)) () k v
+busy : Eq k => Build Applicative () k v
 busy {k} {v} tasks key store = execState (fetch key) store
   where
     fetch : k -> State (Store () k v) v
@@ -86,11 +83,11 @@ Monoid a => Applicative (ConstA a) where
   pure _ = MkConst neutral
   (<*>) (MkConst x) (MkConst y) = MkConst (x <+> y)
 
-deps : Task Applicative (ConstA (List k)) k v -> List k
+deps : Task Applicative k v -> List k
 deps (MkTask f) = getConst $ f (\k => MkConst [k])
 
 b1Deps : Maybe (List String)
-b1Deps = deps <$> sprsh1 {f=ConstA (List String)} "B1"
+b1Deps = deps <$> sprsh1 "B1"
 
 b2Deps : Maybe (List String)
-b2Deps = deps <$> sprsh1 {f=ConstA (List String)} "B2"
+b2Deps = deps <$> sprsh1 "B2"

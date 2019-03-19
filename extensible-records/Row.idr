@@ -37,35 +37,18 @@ namespace Row
       Here : RowElem label ty ((label ::: ty) :: r)
       There : (later : RowElem label ty r) -> RowElem label ty (a :: r)
 
-    nilNotCons : (Row.Nil = (x :: y)) -> Void
-    nilNotCons Refl impossible
-
-    consNotNil : ((x :: y) = Row.Nil) -> Void
-    consNotNil Refl impossible
+    data RowEq : Row lty ty -> Row lty ty -> Type where
+      Base : RowEq [] []
+      Head : RowEq xs ys -> RowEq ((l ::: t) :: xs) ((l ::: t) :: ys)
+      Swap : (l = l' -> Void)
+          -> RowEq ((l ::: t) :: (l' ::: t') :: xs)
+                   ((l' ::: t') :: (l ::: t) :: xs)
 
     (!!) : Row lty ty -> Row lty ty -> Row lty ty
     (!!) [] [] = []
     (!!) [] ys = ys
     (!!) (x :: z) y = x :: (z !! y)
 
-    implementation (DecEq lty, DecEq ty) => DecEq (Row lty ty) where
-      decEq [] [] = Yes Refl
-      decEq [] (x :: y) = No nilNotCons
-      decEq (x :: y) [] = No consNotNil
-      decEq ((l0 ::: x0) :: ((l0' ::: y0) :: s)) ((l1' ::: y1) :: ((l1 ::: x1) :: t)) =
-        case decEq l0 l1 of
-          Yes y => case decEq l0' l1' of
-            Yes y' => case decEq x0 x1 of
-              Yes xy => case decEq y0 y1 of
-                Yes yy => case decEq l0 l0' of
-                  Yes yyy => ?idk4
-                  No nnn => ?idk5 -- lemma proving that we're equal now? assuming Yes (s = t)
-                No ny => ?idk3
-              No xn => ?idk1
-            No n' => ?ynidk
-          No n => ?nidk
-      decEq (x :: []) (z :: w) = ?decEqRhs_1
-      decEq (x :: (y :: s)) (z :: []) = ?decEqRhs_3
 
 namespace Record
     data Field : lty -> Type -> Type where

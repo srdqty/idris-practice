@@ -35,7 +35,9 @@ namespace Row
 
     data RowElem : (label : lty) -> (x : ty) -> Row lty ty -> Type where
       Here : RowElem label ty ((label ::: ty) :: r)
-      There : (later : RowElem label ty r) -> RowElem label ty (a :: r)
+      There : (label = label' -> Void)
+           -> (later : RowElem label ty r)
+           -> RowElem label ty ((label' ::: ty') :: r)
 
     data RowEq : Row lty ty -> Row lty ty -> Type where
       Base : RowEq [] []
@@ -63,7 +65,7 @@ namespace Record
 -- Selection
 select : Record r ->  RowElem l a r -> a
 select ((l := v) :: z) Here = v
-select (x :: z) (There later) = select z later
+select (x :: z) (There _ later) = select z later
 
 (.) : Record r -> (l : lty) -> { auto prf : RowElem l a r } -> a
 (.) rec l {prf} = select rec prf
@@ -92,8 +94,8 @@ r = ["a" := 'c', "b" := 5]
 s : Record (("d" ::: String) :: Main.x)
 s = ("d" := "yoyoyo") :: r
 
-t : Record ["a" ::: Integer, "b" ::: Integer, "c" ::: Integer]
-t = ["a" := 1, "b" := 2, "c" := 3]
+t : Record ["b" ::: Char, "a" ::: Integer, "b" ::: Integer, "c" ::: Integer]
+t = ["b" := 'c', "a" := 1, "b" := 2, "c" := 3]
 
 q : Record ["b" ::: Integer]
 q = ["b" := 7]

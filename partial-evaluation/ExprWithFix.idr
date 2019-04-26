@@ -2,12 +2,21 @@ import Data.Vect
 
 -- %default total
 
-data Ty = TyInt | TyFun Ty Ty | TyBool
+data Ty = TyInt | TyFun Ty Ty | TyBool | TyFix Ty Ty
+
+data Fixed a t = MkFixed ((a -> t) -> a -> t)
+
+fix : ((a -> b) -> a -> b) -> a -> b
+fix f x = f (fix f) x
+
+unFixed : Fixed a t -> a -> t
+unFixed (MkFixed f) = fix f
 
 interpTy : Ty -> Type
 interpTy TyInt = Int
 interpTy (TyFun a t) = interpTy a -> interpTy t
 interpTy TyBool = Bool
+interpTy (TyFix a t) = Fixed (interpTy a) (interpTy t)
 
 data Expr : (Vect n Ty) -> Ty -> Type where
   Var : (i : Fin n) -> Expr g (index i g)
@@ -19,6 +28,7 @@ data Expr : (Vect n Ty) -> Ty -> Type where
     -> Expr g b
     -> Expr g c
   If : Expr g TyBool -> Expr g a -> Expr g a -> Expr g a
+  Fix : Expr (TyFun a t :: a :: g) t -> Expr g (TyFix a t)
 
 data Env : Vect n Ty -> Type where
   Empty : Env Nil
@@ -32,9 +42,6 @@ updateEnv : Env g -> (i : Fin n) -> interpTy t -> Env (replaceAt i t g)
 updateEnv (Extend res x) FZ y = Extend y x
 updateEnv (Extend res x) (FS z) y = Extend res (updateEnv x z y)
 
-fix : ((a -> b) -> a -> b) -> a -> b
-fix f x = f (fix f) x
-
 interp : Env g -> %static Expr g t -> interpTy t
 interp env (Var i) = envLookup i env
 interp env (Val x) = x
@@ -43,6 +50,7 @@ interp env (App f a) = interp env f (interp env a)
 interp env (Op op l r) = op (interp env l) (interp env r)
 interp env (If v t e) =
   if (interp env v) then (interp env t) else (interp env e)
+interp env (Fix sc) = MkFixed (\f, x => interp (Extend f (Extend x env)) sc)
 
 add : Expr g (TyFun TyInt (TyFun TyInt TyInt))
 add = Lam (Lam (Op (+) (Var (FS FZ)) (Var FZ)))
@@ -58,11 +66,20 @@ double = Lam (App (App add (Var FZ)) (Var FZ))
 \x => prim__addInt x x : Int -> Int
 -}
 
-fact : Expr g (TyFun TyInt TyInt)
-fact = Lam (If (Op (==) (Val 0) (Var FZ))
+fac : Expr g (TyFix TyInt TyInt)
+fac = Fix (If (Op (==) (Val 0) x)
                (Val 1)
-               (Op (*) (Var FZ)
-                       (App fact (Op (-) (Var FZ) (Val 1)))))
+               (Op (*) x
+                       (App f (Op (-) x (Val 1)))))
+  where
+    Fn : Ty
+    Fn = TyFun TyInt TyInt
+
+    f : Expr (Fn :: _) Fn
+    f = Var FZ
+
+    x : Expr (a :: TyInt :: _) TyInt
+    x = Var (FS FZ)
 {-
 *Expr> interp Empty fact
 <infinite loop>

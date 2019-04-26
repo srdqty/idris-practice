@@ -1,6 +1,7 @@
 *.swp
 *~
 *.ghc.environment.*
+*.exe
 
 # nix-build
 result

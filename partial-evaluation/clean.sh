@@ -3,3 +3,4 @@
 set -eu
 
 rm -f *.ibc
+rm -f *.exe

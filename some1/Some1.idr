@@ -76,7 +76,7 @@ data Event : Type where
 
 implementation ToJSON Event where
   toJSON (MkEvent et payload) =
-    VObject [("type", toJSON et), ("paylaod", toJSON et payload)]
+    VObject [("type", toJSON et), ("payload", toJSON et payload)]
 
 implementation FromJSON Event where
   fromJSON (VObject [("type", vet), ("payload", vpayload)]) =

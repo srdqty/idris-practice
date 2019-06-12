@@ -1,4 +1,5 @@
--- https://reasonablypolymorphic.com/some1-like-you/#/title
+-- ttps://www.youtube.com/watch?v=PNkoUv74JQU
+-- https://reasonablypolymorphic.com/some1-like-you
 
 data Value
   = VObject (List (String, Value))
@@ -23,25 +24,28 @@ data Duration = MkDuration
 data PayloadWakeUp = MkPayloadWakeUp
 
 implementation ToJSON PayloadWakeUp where
-  toJSON _ = VNull
+  toJSON _ = VString "PayloadWakeUp"
 
 implementation FromJSON PayloadWakeUp where
+  fromJSON (VString "PayloadWakeUp") = Just MkPayloadWakeUp
   fromJSON _ = Nothing
 
 data PayloadEat = MkPayloadEat Meal
 
 implementation ToJSON PayloadEat where
-  toJSON _ = VNull
+  toJSON _ = VString "PayloadEat"
 
 implementation FromJSON PayloadEat where
+  fromJSON (VString "PayloadEat") = Just (MkPayloadEat MkMeal)
   fromJSON _ = Nothing
 
 data PayloadRockOut = MkPayloadRockOut Song Duration
 
 implementation ToJSON PayloadRockOut where
-  toJSON _ = VNull
+  toJSON _ = VString "PayloadRockOut"
 
 implementation FromJSON PayloadRockOut where
+  fromJSON (VString "PayloadRockOut") = Just (MkPayloadRockOut MkSong MkDuration)
   fromJSON _ = Nothing
 
 data EventType = WakeUp | Eat | RockOut

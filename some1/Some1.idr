@@ -1,6 +1,8 @@
 -- ttps://www.youtube.com/watch?v=PNkoUv74JQU
 -- https://reasonablypolymorphic.com/some1-like-you
 
+%default total
+
 data Value
   = VObject (List (String, Value))
   | VArray (List Value)

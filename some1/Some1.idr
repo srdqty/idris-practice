@@ -11,8 +11,20 @@ data Value
 interface FromJSON a where
   fromJSON : Value -> Maybe a
 
+data FromJSONDict : Type -> Type where
+  MkFromJSONDict : FromJSON a => FromJSONDict a
+
+withFromJSONDict : FromJSONDict a -> (FromJSON a => r) -> r
+withFromJSONDict MkFromJSONDict r = r
+
 interface ToJSON a where
   toJSON : a -> Value
+
+data ToJSONDict : Type -> Type where
+  MkToJSONDict : ToJSON a => ToJSONDict a
+
+withToJSONDict : ToJSONDict a -> (ToJSON a => r) -> r
+withToJSONDict MkToJSONDict r = r
 
 data Meal = MkMeal
 data Song = MkSong
@@ -61,28 +73,46 @@ namespace Payload
   Payload Eat = PayloadEat
   Payload RockOut = PayloadRockOut
 
-  fromJSON : (et : EventType) -> Value -> (Maybe (Payload et))
-  fromJSON WakeUp v = the (Maybe (Payload WakeUp)) (fromJSON v)
-  fromJSON Eat v = the (Maybe (Payload Eat)) (fromJSON v)
-  fromJSON RockOut v = the (Maybe (Payload RockOut)) (fromJSON v)
+  dictFromJSON : ( FromJSON (Payload WakeUp)
+                 , FromJSON (Payload Eat)
+                 , FromJSON (Payload RockOut)
+                 )
+               => (et : EventType)
+               -> FromJSONDict (Payload et)
+  dictFromJSON WakeUp = MkFromJSONDict
+  dictFromJSON Eat = MkFromJSONDict
+  dictFromJSON RockOut = MkFromJSONDict
 
-  toJSON : (et : EventType) -> Payload et -> Value
-  toJSON WakeUp payload = toJSON (the (Payload WakeUp) payload)
-  toJSON Eat payload = toJSON (the (Payload Eat) payload)
-  toJSON RockOut payload = toJSON (the (Payload RockOut) payload)
+  dictToJSON : ( ToJSON (Payload WakeUp)
+               , ToJSON (Payload Eat)
+               , ToJSON (Payload RockOut)
+               )
+             => (et : EventType)
+             -> ToJSONDict (Payload et)
+  dictToJSON WakeUp = MkToJSONDict
+  dictToJSON Eat = MkToJSONDict
+  dictToJSON RockOut = MkToJSONDict
+
 
 data Event : Type where
   MkEvent : (et : EventType) -> Payload et -> Event
 
 implementation ToJSON Event where
   toJSON (MkEvent et payload) =
-    VObject [("type", toJSON et), ("payload", toJSON et payload)]
+    VObject [("type", toJSON et), ("payload", toJSON' et payload)]
+  where
+    toJSON' : (et : EventType) -> Payload et -> Value
+    toJSON' et payload = withToJSONDict (dictToJSON et) (toJSON payload)
 
 implementation FromJSON Event where
   fromJSON (VObject [("type", vet), ("payload", vpayload)]) =
     case the (Maybe EventType) (fromJSON vet) of
       Nothing => Nothing
-      Just et => case fromJSON et vpayload of
+      Just et => case fromJSON' et vpayload of
         Nothing => Nothing
         Just payload => Just (MkEvent et payload)
+  where
+    fromJSON' : (et : EventType) -> Value -> (Maybe (Payload et))
+    fromJSON' et v = withFromJSONDict (dictFromJSON et) (fromJSON v)
+
   fromJSON _ = Nothing

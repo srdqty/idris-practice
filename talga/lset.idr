@@ -52,6 +52,7 @@ record Tau where
   first : List Char
   flast : List Char
 
+-- Need a function to calculate a Dec of this
 data Separate : Tau -> Tau -> Type where
   MkSeparate : {t1 : Tau}
             -> {t2 : Tau}
@@ -59,6 +60,7 @@ data Separate : Tau -> Tau -> Type where
             -> (q : null t1 = False)
             -> Separate t1 t2
 
+-- Need a function to calculate a Dec of this
 data Apart : Tau -> Tau -> Type where
   MkApart : {t1 : Tau}
          -> {t2 : Tau}
@@ -140,7 +142,10 @@ data Typing : {a : Type}
       -> Apart t t'
       -> Typing gamma delta (Alt e e') (tauAlt t t')
 
-typeOf : {ctx : Vect n Type} -> (gamma : Vect n Tau) -> Grammar ctx a -> Typing gamma delta g t
+typeOf : (gamma : Vect n Tau)
+      -> (delta : Vect m Tau)
+      -> Grammar ctx a
+      -> Dec (Typing gamma delta g t)
 {-
 p : Typing gamma delta expr tau
  -> Env
